@@ -1,5 +1,6 @@
 package com.example.journal
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,8 +12,11 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.view.WindowCompat
 import com.example.journal.data.repo.FileJournalRepository
 import com.example.journal.data.repo.ThemeRepository
 import com.example.journal.ui.entry.EntryScreen
@@ -68,6 +72,23 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
     // Choose color scheme based on persisted preference
     val colorScheme = if (isDark) darkColorScheme() else lightColorScheme()
 
+    // ---- System UI (status bar / nav bar) handling ----
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        val window = (view.context as Activity).window
+        SideEffect {
+            // set status bar & navigation bar background to match app surface
+            window.statusBarColor = colorScheme.surface.toArgb()
+            window.navigationBarColor = colorScheme.surface.toArgb()
+
+            // For light backgrounds we want dark icons; for dark backgrounds we want light icons
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = !isDark
+            controller.isAppearanceLightNavigationBars = !isDark
+        }
+    }
+    // --------------------------------------------------
+
     MaterialTheme(colorScheme = colorScheme) {
         Surface(modifier = Modifier.fillMaxSize()) {
             if (showEntryScreen) {
@@ -86,9 +107,7 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
                     entryDates = entryDates,
                     hasTodayEntry = hasTodayEntry,
                     onAddClicked = { showEntryScreen = true },
-                    onToggleTheme = {
-                        themeViewModel.toggleTheme()
-                    }
+                    onToggleTheme = { themeViewModel.toggleTheme() }
                 )
             }
         }
