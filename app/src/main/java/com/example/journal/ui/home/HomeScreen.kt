@@ -18,6 +18,7 @@ import com.example.journal.data.repo.FileJournalRepository
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun HomeScreen(
@@ -82,14 +83,16 @@ fun HomeScreen(
                     )
                 } else {
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                    val ctx = LocalContext.current.applicationContext
 
                     // For each date, show a Card with date and a one-line snippet (non-clickable)
-                    entryDates.forEachIndexed { index, date ->
+                    entryDates.forEachIndexed { _, date ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 6.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
@@ -101,8 +104,7 @@ fun HomeScreen(
                                 // Small preview of the entry content (read-only)
                                 val previewText = runCatching {
                                     // quick synchronous read (safe because small and local)
-                                    // this helper uses FileJournalRepository to read the file content
-                                    val repo = FileJournalRepository(androidx.compose.ui.platform.LocalContext.current.applicationContext)
+                                    val repo = FileJournalRepository(ctx)
                                     val entry = runBlocking { repo.readEntry(date) }
                                     entry?.content ?: ""
                                 }.getOrDefault("")
@@ -117,10 +119,7 @@ fun HomeScreen(
                             }
                         }
 
-                        // Divider between items (subtle)
-                        if (index < entryDates.lastIndex) {
-                            Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                        }
+                        // Removed Divider to eliminate the thin line between cards
                     }
                 }
             }
