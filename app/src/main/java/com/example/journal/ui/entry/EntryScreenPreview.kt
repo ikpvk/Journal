@@ -23,9 +23,11 @@ fun EntryScreen_Preview() {
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
+            // For preview, show both editable and read-only variants by defaulting to editable.
             EntryScreen(
                 date = sampleDate,
                 content = sampleText,
+                isEditable = true, // preview editable mode
                 onContentChange = { /* preview only */ },
                 onBack = { /* preview only */ }
             )

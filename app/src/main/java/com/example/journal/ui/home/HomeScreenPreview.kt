@@ -18,7 +18,8 @@ fun HomeScreen_Preview() {
                 entryDates = sampleDates,
                 hasTodayEntry = true,
                 onAddClicked = {},
-                onToggleTheme = {}
+                onToggleTheme = {},
+                onEntryClicked = { /* preview only */ }
             )
         }
     }

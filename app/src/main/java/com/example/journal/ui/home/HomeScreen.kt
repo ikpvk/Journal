@@ -1,5 +1,6 @@
 package com.example.journal.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,7 +26,8 @@ fun HomeScreen(
     entryDates: List<LocalDate>,
     hasTodayEntry: Boolean,
     onAddClicked: () -> Unit,
-    onToggleTheme: () -> Unit
+    onToggleTheme: () -> Unit,
+    onEntryClicked: (LocalDate) -> Unit
 ) {
     Scaffold(
         floatingActionButton = {
@@ -85,12 +87,13 @@ fun HomeScreen(
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
                     val ctx = LocalContext.current.applicationContext
 
-                    // For each date, show a Card with date and a one-line snippet (non-clickable)
+                    // For each date, show a Card with date and a one-line snippet (clickable)
                     entryDates.forEachIndexed { _, date ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                                .clickable { onEntryClicked(date) },
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
@@ -103,7 +106,7 @@ fun HomeScreen(
 
                                 // Small preview of the entry content (read-only)
                                 val previewText = runCatching {
-                                    // quick synchronous read (safe because small and local)
+                                    // quick synchronous read (small local I/O)
                                     val repo = FileJournalRepository(ctx)
                                     val entry = runBlocking { repo.readEntry(date) }
                                     entry?.content ?: ""
@@ -118,8 +121,6 @@ fun HomeScreen(
                                 )
                             }
                         }
-
-                        // Removed Divider to eliminate the thin line between cards
                     }
                 }
             }

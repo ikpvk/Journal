@@ -10,19 +10,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.core.view.WindowCompat
 import com.example.journal.data.repo.FileJournalRepository
 import com.example.journal.data.repo.ThemeRepository
 import com.example.journal.ui.entry.EntryScreen
@@ -33,8 +27,7 @@ import com.example.journal.viewmodel.HomeViewModel
 import com.example.journal.viewmodel.HomeViewModelFactory
 import com.example.journal.viewmodel.ThemeViewModel
 import com.example.journal.viewmodel.ThemeViewModelFactory
-import kotlinx.coroutines.launch
-
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
 
@@ -55,30 +48,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             JournalApp(homeViewModel = homeViewModel, themeViewModel = themeViewModel)
         }
-
-        // --- temporary: create dummy entries for testing ---
-        val repo = FileJournalRepository(applicationContext)
-        val dummyEntries = mapOf(
-            java.time.LocalDate.of(2025, 11, 1) to """
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Sed at velit sit amet justo volutpat malesuada.
-        Suspendisse potenti. Nullam commodo sapien vel nunc viverra volutpat.
-    """.trimIndent(),
-            java.time.LocalDate.of(2025, 10, 20) to """
-        Curabitur in leo eu justo placerat gravida.
-        Aliquam erat volutpat. Sed a imperdiet nulla.
-        Quisque at nunc ac justo tincidunt suscipit.
-    """.trimIndent()
-        )
-
-        kotlinx.coroutines.GlobalScope.launch {
-            dummyEntries.forEach { (date, content) ->
-                if (repo.readEntry(date) == null) {
-                    repo.saveEntry(com.example.journal.data.model.JournalEntry(date, content))
-                }
-            }
-        }
-
     }
 }
 
@@ -91,15 +60,10 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
     val entryDates by homeViewModel.entryDates.collectAsState()
     val hasTodayEntry by homeViewModel.hasTodayEntry.collectAsState()
 
-    // simple navigation state: false = Home, true = Entry
-    var showEntryScreen by remember { mutableStateOf(false) }
-
-    // EntryViewModel via Compose helper (factory)
-    val context = LocalContext.current.applicationContext
-    val repoForEntry = remember { FileJournalRepository(context) }
-    val entryVm: EntryViewModel = viewModel(
-        factory = EntryViewModelFactory(repoForEntry, java.time.LocalDate.now())
-    )
+    // simple navigation state:
+    // selectedDate = null -> show Home
+    // selectedDate != null -> show Entry for that date
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     // Choose color scheme based on persisted preference
     val colorScheme = if (isDark) darkColorScheme() else lightColorScheme()
@@ -109,11 +73,8 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
     if (!view.isInEditMode) {
         val window = (view.context as Activity).window
         SideEffect {
-            // set status bar & navigation bar background to match app surface
             window.statusBarColor = colorScheme.surface.toArgb()
             window.navigationBarColor = colorScheme.surface.toArgb()
-
-            // For light backgrounds we want dark icons; for dark backgrounds we want light icons
             val controller = WindowCompat.getInsetsController(window, view)
             controller.isAppearanceLightStatusBars = !isDark
             controller.isAppearanceLightNavigationBars = !isDark
@@ -123,14 +84,24 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
 
     MaterialTheme(colorScheme = colorScheme) {
         Surface(modifier = Modifier.fillMaxSize()) {
-            if (showEntryScreen) {
+            if (selectedDate != null) {
+                // Create an EntryViewModel keyed by the selected date so each date gets its own VM
+                val key = selectedDate.toString()
+                val entryVm: EntryViewModel = viewModel(
+                    key = key,
+                    factory = EntryViewModelFactory(/* repo */ FileJournalRepository(LocalContext.current.applicationContext), selectedDate!!)
+                )
+
                 val content by entryVm.content.collectAsState()
+
                 EntryScreen(
-                    date = java.time.LocalDate.now(),
+                    date = selectedDate!!,
                     content = content,
-                    onContentChange = { entryVm.onContentChanged(it) },
+                    isEditable = (selectedDate == LocalDate.now()),
+                    onContentChange = { if (selectedDate == LocalDate.now()) entryVm.onContentChanged(it) },
                     onBack = {
-                        showEntryScreen = false
+                        // when closing entry screen, go back to home and refresh list
+                        selectedDate = null
                         homeViewModel.refresh()
                     }
                 )
@@ -138,8 +109,14 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
                 HomeScreen(
                     entryDates = entryDates,
                     hasTodayEntry = hasTodayEntry,
-                    onAddClicked = { showEntryScreen = true },
-                    onToggleTheme = { themeViewModel.toggleTheme() }
+                    onAddClicked = {
+                        // open today's entry in edit mode
+                        selectedDate = LocalDate.now()
+                    },
+                    onToggleTheme = { themeViewModel.toggleTheme() },
+                    onEntryClicked = { date ->
+                        selectedDate = date
+                    }
                 )
             }
         }
