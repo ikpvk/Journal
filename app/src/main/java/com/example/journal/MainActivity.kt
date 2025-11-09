@@ -89,7 +89,7 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
                 val key = selectedDate.toString()
                 val entryVm: EntryViewModel = viewModel(
                     key = key,
-                    factory = EntryViewModelFactory(/* repo */ FileJournalRepository(LocalContext.current.applicationContext), selectedDate!!)
+                    factory = EntryViewModelFactory(FileJournalRepository(LocalContext.current.applicationContext), selectedDate!!)
                 )
 
                 val content by entryVm.content.collectAsState()
@@ -103,7 +103,8 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
                         // when closing entry screen, go back to home and refresh list
                         selectedDate = null
                         homeViewModel.refresh()
-                    }
+                    },
+                    onToggleTheme = { themeViewModel.toggleTheme() } // <-- added
                 )
             } else {
                 HomeScreen(

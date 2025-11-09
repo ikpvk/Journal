@@ -5,11 +5,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +30,7 @@ import java.time.format.DateTimeFormatter
  *  - read-only mode (isEditable = false) -> shows a scrollable Text view (non-editable)
  *
  * Tapping the date at the top always invokes onBack() to return to the previous screen.
+ * The theme toggle is available on this screen via onToggleTheme.
  */
 @Composable
 fun EntryScreen(
@@ -33,7 +38,8 @@ fun EntryScreen(
     content: String,
     isEditable: Boolean,
     onContentChange: (String) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onToggleTheme: () -> Unit = {}
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -41,7 +47,7 @@ fun EntryScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
         ) {
-            // Top: Date label (tappable to go back)
+            // Top: Date label (tappable to go back) and theme toggle (top-right)
             Text(
                 text = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
                 style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
@@ -50,6 +56,18 @@ fun EntryScreen(
                     .padding(top = 12.dp)
                     .clickable { onBack() }
             )
+
+            IconButton(
+                onClick = onToggleTheme,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Brightness6,
+                    contentDescription = "Toggle theme"
+                )
+            }
 
             // Editor / Reader area
             Box(
