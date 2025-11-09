@@ -10,13 +10,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.journal.data.repo.FileJournalRepository
 import com.example.journal.data.repo.ThemeRepository
 import com.example.journal.ui.entry.EntryScreen
@@ -27,6 +33,8 @@ import com.example.journal.viewmodel.HomeViewModel
 import com.example.journal.viewmodel.HomeViewModelFactory
 import com.example.journal.viewmodel.ThemeViewModel
 import com.example.journal.viewmodel.ThemeViewModelFactory
+import kotlinx.coroutines.launch
+
 
 class MainActivity : ComponentActivity() {
 
@@ -47,6 +55,30 @@ class MainActivity : ComponentActivity() {
         setContent {
             JournalApp(homeViewModel = homeViewModel, themeViewModel = themeViewModel)
         }
+
+        // --- temporary: create dummy entries for testing ---
+        val repo = FileJournalRepository(applicationContext)
+        val dummyEntries = mapOf(
+            java.time.LocalDate.of(2025, 11, 1) to """
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Sed at velit sit amet justo volutpat malesuada.
+        Suspendisse potenti. Nullam commodo sapien vel nunc viverra volutpat.
+    """.trimIndent(),
+            java.time.LocalDate.of(2025, 10, 20) to """
+        Curabitur in leo eu justo placerat gravida.
+        Aliquam erat volutpat. Sed a imperdiet nulla.
+        Quisque at nunc ac justo tincidunt suscipit.
+    """.trimIndent()
+        )
+
+        kotlinx.coroutines.GlobalScope.launch {
+            dummyEntries.forEach { (date, content) ->
+                if (repo.readEntry(date) == null) {
+                    repo.saveEntry(com.example.journal.data.model.JournalEntry(date, content))
+                }
+            }
+        }
+
     }
 }
 

@@ -11,11 +11,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.journal.data.repo.FileJournalRepository
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
 
 @Composable
 fun HomeScreen(
@@ -39,7 +41,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Top bar
+            // Top bar (title centered)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -47,7 +49,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Spacer(modifier = Modifier.width(48.dp))
+                Spacer(modifier = Modifier.width(48.dp)) // left spacer to center title visually
                 Text(
                     text = "Journal",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -63,7 +65,7 @@ fun HomeScreen(
                 }
             }
 
-            // List area
+            // Content list
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -80,12 +82,45 @@ fun HomeScreen(
                     )
                 } else {
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                    entryDates.forEach { date ->
-                        Text(
-                            text = date.format(formatter),
-                            modifier = Modifier.padding(vertical = 6.dp),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+
+                    // For each date, show a Card with date and a one-line snippet (non-clickable)
+                    entryDates.forEachIndexed { index, date ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = date.format(formatter),
+                                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 16.sp),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+
+                                // Small preview of the entry content (read-only)
+                                val previewText = runCatching {
+                                    // quick synchronous read (safe because small and local)
+                                    // this helper uses FileJournalRepository to read the file content
+                                    val repo = FileJournalRepository(androidx.compose.ui.platform.LocalContext.current.applicationContext)
+                                    val entry = runBlocking { repo.readEntry(date) }
+                                    entry?.content ?: ""
+                                }.getOrDefault("")
+
+                                Text(
+                                    text = previewText.replace("\n", " ").trim(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 6.dp)
+                                )
+                            }
+                        }
+
+                        // Divider between items (subtle)
+                        if (index < entryDates.lastIndex) {
+                            Divider(modifier = Modifier.padding(horizontal = 16.dp))
+                        }
                     }
                 }
             }
