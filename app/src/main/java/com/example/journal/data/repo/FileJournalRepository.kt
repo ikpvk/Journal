@@ -15,25 +15,30 @@ interface JournalRepository {
     suspend fun deleteEntry(date: LocalDate)
 }
 
+/**
+ * FileJournalRepository can be constructed in two ways:
+ *  - FileJournalRepository(rootDir: File)  -> useful for unit tests
+ *  - FileJournalRepository(appContext: Context) -> convenience for runtime code
+ *
+ * Files are stored directly inside the provided rootDir (no additional "entries" subfolder
+ * is created when constructing with File).
+ */
 class FileJournalRepository(
-    private val appContext: Context
+    private val rootDir: File
 ) : JournalRepository {
 
+    constructor(appContext: Context) : this(File(appContext.filesDir, "entries").apply { if (!exists()) mkdirs() })
+
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    private val entriesDir: File by lazy {
-        File(appContext.filesDir, "entries").apply {
-            if (!exists()) mkdirs()
-        }
-    }
 
     private fun filenameFor(date: LocalDate): String =
         "${date.format(dateFormatter)}.txt"
 
     private fun fileFor(date: LocalDate): File =
-        File(entriesDir, filenameFor(date))
+        File(rootDir, filenameFor(date))
 
     override suspend fun listEntryDatesDescending(): List<LocalDate> = withContext(Dispatchers.IO) {
-        val files = entriesDir.listFiles { f -> f.isFile && f.name.endsWith(".txt") } ?: arrayOf()
+        val files = rootDir.listFiles { f -> f.isFile && f.name.endsWith(".txt") } ?: arrayOf()
         val dates = files.mapNotNull { file ->
             // ignore zero-length files (treat as non-existent)
             if (file.length() == 0L) return@mapNotNull null
@@ -69,7 +74,7 @@ class FileJournalRepository(
             }
 
             // Atomic write: write to temp file and rename
-            val tmp = File(entriesDir, "${f.name}.tmp")
+            val tmp = File(rootDir, "${f.name}.tmp")
             tmp.writeText(content, Charsets.UTF_8)
 
             // Attempt atomic rename; if that fails, fallback to overwrite
