@@ -1,23 +1,22 @@
 package com.example.journal.ui.home
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/**
- * Pure UI composable — accepts state and callbacks rather than a ViewModel.
- * This makes it easily previewable and testable.
- */
+
 @Composable
 fun HomeScreen(
     entryDates: List<LocalDate>,
@@ -25,10 +24,13 @@ fun HomeScreen(
     onAddClicked: () -> Unit,
     onToggleTheme: () -> Unit
 ) {
-    androidx.compose.material3.Scaffold(
+    Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClicked) {
-                Text("+")
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add journal entry"
+                )
             }
         }
     ) { padding ->
@@ -37,39 +39,53 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Title (top center)
-            Text(
-                text = "Journal",
-                fontSize = 24.sp,
+            // Top bar
+            Row(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 16.dp)
-            )
-
-            // Theme toggle (top-right)
-            IconButton(
-                onClick = onToggleTheme,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, start = 12.dp, end = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("☼")
+                Spacer(modifier = Modifier.width(48.dp))
+                Text(
+                    text = "Journal",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
+                    )
+                )
+                IconButton(onClick = onToggleTheme) {
+                    Icon(
+                        imageVector = Icons.Default.Brightness6,
+                        contentDescription = "Toggle theme"
+                    )
+                }
             }
 
-            // Content area: list of dates or placeholder
+            // List area
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(top = 72.dp),
+                    .padding(top = 72.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (entryDates.isEmpty()) {
-                    Text("No entries yet", modifier = Modifier.padding(8.dp))
+                    Text(
+                        "No journal entries yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 } else {
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
                     entryDates.forEach { date ->
-                        Text(text = date.format(formatter), modifier = Modifier.padding(4.dp))
+                        Text(
+                            text = date.format(formatter),
+                            modifier = Modifier.padding(vertical = 6.dp),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 }
             }
