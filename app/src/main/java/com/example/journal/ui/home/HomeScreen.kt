@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.example.journal.ui.home
 
 import androidx.compose.foundation.clickable
@@ -20,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.compose.ui.platform.LocalContext
+import com.example.journal.ui.common.JournalTopBar
 
 @Composable
 fun HomeScreen(
@@ -30,6 +33,13 @@ fun HomeScreen(
     onEntryClicked: (LocalDate) -> Unit
 ) {
     Scaffold(
+        topBar = {
+            // Use the shared top bar so title and theme icon align exactly with Entry screen
+            JournalTopBar(
+                titleText = "Journal",
+                onToggleTheme = onToggleTheme
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClicked) {
                 Icon(
@@ -44,36 +54,11 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Top bar (title centered)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, start = 12.dp, end = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(modifier = Modifier.width(48.dp)) // left spacer to center title visually
-                Text(
-                    text = "Journal",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
-                    )
-                )
-                IconButton(onClick = onToggleTheme) {
-                    Icon(
-                        imageVector = Icons.Default.Brightness6,
-                        contentDescription = "Toggle theme"
-                    )
-                }
-            }
-
-            // Content list
+            // Content list (scrolled column). inner padding from Scaffold ensures content sits under top bar correctly.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(top = 72.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
