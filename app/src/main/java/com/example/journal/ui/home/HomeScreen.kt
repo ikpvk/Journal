@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.HorizontalDivider
 
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,17 +74,13 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                icon = {
-                    Icon(
-                        imageVector = Icons.Filled.CalendarToday,
-                        contentDescription = "Add"
-                    )
-                },
-                text = { Text(if (hasTodayEntry) "Open Today" else "Add Today") },
+            FloatingActionButton(
                 onClick = onAddClicked
-            )
+            ) {
+                Text(text = "+")
+            }
         }
+
     ) { paddingValues ->
         if (entryDates.isEmpty()) {
             // Empty state

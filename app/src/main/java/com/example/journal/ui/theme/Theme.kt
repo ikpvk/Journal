@@ -4,12 +4,14 @@ import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -33,6 +35,32 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+// Use monospace for the entire app
+private val AppFontFamily = FontFamily.Monospace
+
+// Create an AppTypography that uses monospace for all text styles
+private val AppTypography = Typography(
+    displayLarge = Typography().displayLarge.copy(fontFamily = AppFontFamily),
+    displayMedium = Typography().displayMedium.copy(fontFamily = AppFontFamily),
+    displaySmall = Typography().displaySmall.copy(fontFamily = AppFontFamily),
+
+    headlineLarge = Typography().headlineLarge.copy(fontFamily = AppFontFamily),
+    headlineMedium = Typography().headlineMedium.copy(fontFamily = AppFontFamily),
+    headlineSmall = Typography().headlineSmall.copy(fontFamily = AppFontFamily),
+
+    titleLarge = Typography().titleLarge.copy(fontFamily = AppFontFamily),
+    titleMedium = Typography().titleMedium.copy(fontFamily = AppFontFamily),
+    titleSmall = Typography().titleSmall.copy(fontFamily = AppFontFamily),
+
+    bodyLarge = Typography().bodyLarge.copy(fontFamily = AppFontFamily),
+    bodyMedium = Typography().bodyMedium.copy(fontFamily = AppFontFamily),
+    bodySmall = Typography().bodySmall.copy(fontFamily = AppFontFamily),
+
+    labelLarge = Typography().labelLarge.copy(fontFamily = AppFontFamily),
+    labelMedium = Typography().labelMedium.copy(fontFamily = AppFontFamily),
+    labelSmall = Typography().labelSmall.copy(fontFamily = AppFontFamily)
+)
+
 @Composable
 fun JournalTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -52,7 +80,7 @@ fun JournalTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = AppTypography,
         content = content
     )
 }
