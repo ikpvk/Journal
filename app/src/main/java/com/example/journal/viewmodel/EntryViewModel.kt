@@ -4,89 +4,82 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.journal.data.model.JournalEntry
-import com.example.journal.data.repo.JournalRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import com.example.journal.data.repo.FileJournalRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.io.IOException
 
+/**
+ * ViewModel for a single entry/date.
+ *
+ * This keeps the entry content in a MutableStateFlow so the UI can collect it.
+ * onContentChanged updates the in-memory state immediately and writes to disk
+ * asynchronously on the IO dispatcher via viewModelScope.
+ *
+ * The repo API expected here:
+ * - suspend fun readEntry(date: LocalDate): JournalEntry?
+ * - suspend fun saveEntry(entry: JournalEntry)
+ *
+ * The JournalEntry data class is assumed to have (date: LocalDate, content: String).
+ */
 class EntryViewModel(
-    private val repo: JournalRepository,
-    private val date: LocalDate = LocalDate.now()
+    private val repo: FileJournalRepository,
+    private val date: LocalDate
 ) : ViewModel() {
 
-    private val _content = MutableStateFlow("")
-    val content: StateFlow<String> = _content
-
-    // debounce job for delayed save
-    private var saveJob: Job? = null
-    private val saveDebounceMs: Long = 500L
+    // exposed to UI
+    private val _content = MutableStateFlow<String>("")
+    val content: StateFlow<String> = _content.asStateFlow()
 
     init {
-        // load today's entry if any
-        viewModelScope.launch {
-            val entry = repo.readEntry(date)
-            _content.value = entry?.content ?: ""
-        }
-    }
-
-    /**
-     * Called when user edits the text. Updates state immediately and schedules a debounced save.
-     */
-    fun onContentChanged(newText: String) {
-        _content.value = newText
-
-        // cancel previous scheduled save, schedule a new one
-        saveJob?.cancel()
-        saveJob = viewModelScope.launch {
-            delay(saveDebounceMs)
-            // After debounce, write to storage. The repo will delete if content blank.
-            val entry = JournalEntry(date = date, content = newText)
-            repo.saveEntry(entry)
-        }
-    }
-
-    /**
-     * If needed: immediately persist current content (runs without debounce)
-     */
-    fun flushSave(onComplete: (() -> Unit)? = null) {
+        // Load initial content from repo
         viewModelScope.launch {
             try {
-                val entry = JournalEntry(date = date, content = _content.value)
-                repo.saveEntry(entry)
-            } finally {
-                onComplete?.invoke()
+                val loadedEntry: JournalEntry? = repo.readEntry(date)
+                _content.value = loadedEntry?.content ?: ""
+            } catch (e: IOException) {
+                // If read fails, keep content empty and don't crash the UI.
+                _content.value = ""
+            } catch (e: Exception) {
+                // Defensive: catch any unexpected issue
+                _content.value = ""
             }
         }
     }
 
     /**
-     * Delete today's entry file and clear content in-memory.
+     * Called by UI when the content changes (e.g., user types a new message).
+     * We update the state immediately so the UI is responsive and then persist.
      */
-    fun deleteToday(onComplete: (() -> Unit)? = null) {
-        viewModelScope.launch {
-            repo.deleteEntry(date)
-            _content.value = ""
-            onComplete?.invoke()
-        }
-    }
+    fun onContentChanged(newContent: String) {
+        _content.value = newContent
 
-    override fun onCleared() {
-        // ensure final save when ViewModel is cleared
-        saveJob?.cancel()
+        // Persist in background
         viewModelScope.launch {
-            val entry = JournalEntry(date = date, content = _content.value)
-            repo.saveEntry(entry)
+            try {
+                val entry = JournalEntry(date = date, content = newContent)
+                repo.saveEntry(entry)
+            } catch (e: IOException) {
+                // Swallow IO errors for now; consider surfacing to UI later.
+            } catch (e: Exception) {
+                // Defensive: swallow other errors to avoid crashing UI
+            }
         }
-        super.onCleared()
     }
 }
 
+/**
+ * Factory for EntryViewModel.
+ *
+ * MainActivity constructs the VM using:
+ * EntryViewModelFactory(FileJournalRepository(...), selectedDate!!)
+ */
 class EntryViewModelFactory(
-    private val repo: JournalRepository,
-    private val date: LocalDate = LocalDate.now()
+    private val repo: FileJournalRepository,
+    private val date: LocalDate
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

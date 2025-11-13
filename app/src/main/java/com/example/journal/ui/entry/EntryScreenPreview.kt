@@ -1,36 +1,23 @@
 package com.example.journal.ui.entry
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.journal.ui.theme.JournalTheme
 import java.time.LocalDate
+import androidx.compose.material3.ExperimentalMaterial3Api
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
-fun EntryScreen_Preview() {
-    val sampleDate = LocalDate.parse("2025-11-09")
-    val sampleText = """
-        This is a sample journal entry.
-        
-        Use this preview to tune spacing, fonts and layout.
-        
-        - Bullet 1
-        - Bullet 2
-    """.trimIndent()
-
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            // For preview, show both editable and read-only variants by defaulting to editable.
-            EntryScreen(
-                date = sampleDate,
-                content = sampleText,
-                isEditable = true, // preview editable mode
-                onContentChange = { /* preview only */ },
-                onBack = { /* preview only */ }
-            )
-        }
+fun EntryScreenPreview() {
+    JournalTheme {
+        EntryScreen(
+            date = LocalDate.now(),
+            content = "Hello\nThis is a sample message",
+            isEditable = true,
+            onContentChange = {},
+            onBack = {},
+            onToggleTheme = {}
+        )
     }
 }

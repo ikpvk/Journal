@@ -59,6 +59,7 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
     // collect HomeViewModel state
     val entryDates by homeViewModel.entryDates.collectAsState()
     val hasTodayEntry by homeViewModel.hasTodayEntry.collectAsState()
+    val previews by homeViewModel.previews.collectAsState()
 
     // simple navigation state:
     // selectedDate = null -> show Home
@@ -104,7 +105,7 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
                         selectedDate = null
                         homeViewModel.refresh()
                     },
-                    onToggleTheme = { themeViewModel.toggleTheme() } // <-- added
+                    onToggleTheme = { themeViewModel.toggleTheme() }
                 )
             } else {
                 HomeScreen(
@@ -117,7 +118,8 @@ fun JournalApp(homeViewModel: HomeViewModel, themeViewModel: ThemeViewModel) {
                     onToggleTheme = { themeViewModel.toggleTheme() },
                     onEntryClicked = { date ->
                         selectedDate = date
-                    }
+                    },
+                    previews = previews
                 )
             }
         }
